@@ -24,6 +24,15 @@ function show() {
 	max_points = document.getElementsByName("max_points")[0].value;
 	if (max_points > 0)
 		query.append('max_points', max_points);
+	start_date = document.getElementsByName("start_date")[0].value;
+	end_date = document.getElementsByName("end_date")[0].value;
+	<!-- Currently no checking that start date is less than end date. Have to consider case where one of start date or end_date isn't selected -->
+	query.append('start_date', start_date);
+	query.append('end_date', end_date);
+	start_time = document.getElementsByName("start_time")[0].value;
+	end_time = document.getElementsByName("end_time")[0].value;
+	query.append('start_time', start_time);
+	query.append('end_time', end_time);
 	let request = new Request('/data?' + query.toString());
 	let start = performance.now()
 	fetch(request).then(response => {
@@ -48,9 +57,9 @@ function show() {
 </script>
 <body>
 <form>
-<label>Selector <input name="selector"></label><br>
-<label>Start date <input name="start_date" type="date" disabled></label> <label>time <input name="start_time" type="time" disabled></label><br>
-<label>End date <input name="end_date" type="date" disabled></label> <label>time <input name="end_time" type="time" disabled></label><br>
+<label>Dataset <select id="selectorID" name="selector"><option></option></select></label><br>
+<label>Start date <input name="start_date" type="date" ></label> <label>time <input name="start_time" type="time" ></label><br>
+<label>End date <input name="end_date" type="date"></label> <label>time <input name="end_time" type="time" ></label><br>
 <label>Max points <input name="max_points" type="number" value="1000"></label> <label>Skip every <input name="skip_every" type="number" value="1" disabled></label><br>
 <input type="button" value="Show" onClick="show();">
 <hr>
@@ -75,4 +84,43 @@ var chart = new Chart(
 );
 </script>
 
+<script>
+var select = document.getElementById("selectorID"); 
+let request = new Request('/selectors?');
+fetch(request).then(response => {
+		if (response.status === 200) {
+			return response.json();
+		} else {
+			throw new Error("non 200 response: " + response.status);
+		}
+	}).then(response => {
+		var name_groups = {};
+		for (var i = 0; i < response.length; i++) {
+			var data_name = response[i][0];
+			var name_group= data_name.substring(0, data_name.indexOf('.'));
+			var name_element = data_name.substring(data_name.indexOf('.')+1);
+			if (name_group=='') {
+				name_group = 'Other';
+			}
+			if (!(name_group in name_groups)) {
+				var el_group = document.createElement("OPTGROUP");
+				el_group.label = name_group;
+				name_groups[name_group] = el_group;
+			}
+
+		  
+			var el = document.createElement("option");
+			el.text = name_element;
+			el.value = data_name;
+			name_groups[name_group].appendChild(el)
+		 
+		}
+		
+		for (let key in name_groups) {
+			select.add(name_groups[key]);
+		}
+	}).catch(error => {
+		console.error(error);
+	});
+</script>
 </form>
